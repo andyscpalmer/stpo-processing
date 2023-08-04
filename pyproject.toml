@@ -1,0 +1,22 @@
+[tool.poetry]
+name = "stpo-processing"
+version = "0.1.0"
+description = "A Python tool for identifying and indexing repetitive posts."
+authors = ["Andrew Palmer"]
+readme = "README.md"
+packages = [{include = "stpo_processing"}]
+
+[tool.poetry.dependencies]
+python = ">=3.11,<3.12"
+psycopg2-binary = "^2.9.6"
+nltk = "^3.8.1"
+atproto = "^0.0.23"
+python-dotenv = "^1.0.0"
+
+
+[tool.poetry.group.dev.dependencies]
+jupyter = "^1.0.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
