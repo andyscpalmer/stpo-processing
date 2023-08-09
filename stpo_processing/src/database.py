@@ -1,36 +1,29 @@
-import asyncio
-import logging
 import os
 
 from dotenv import load_dotenv
 import psycopg2
 import psycopg2.extensions
-from psycopg2.extensions import adapt
-from psycopg2 import sql, Error as PGError
+from psycopg2 import sql
 
-from src.constants import DEBUG, SQL_INDENT
+from src.constants import SQL_INDENT
+from src.logging import set_local_logger
+
+logger = set_local_logger(__name__)
 
 
 # Load environment variables from .env
 load_dotenv()
 
-# Set local logger
-logger = logging.getLogger(__name__)
-if DEBUG:
-    logger.setLevel(logging.DEBUG)
-else:
-    logger.setLevel(logging.INFO)
-
 
 def get_database_credentials() -> dict:
     try:
         database_credentials = {
-            "user"      :   os.getenv('STPODB_USER'),
-            "password"  :   os.getenv('STPODB_PASSWORD'),
-            "host"      :   os.getenv('STPODB_HOST'),
-            "port"      :   os.getenv('STPODB_PORT'),
-            "database"  :   os.getenv('STPODB_DATABASE'),
-            "sslmode"   :   os.getenv('STPODB_SSLMODE'),
+            "user": os.getenv("STPODB_USER"),
+            "password": os.getenv("STPODB_PASSWORD"),
+            "host": os.getenv("STPODB_HOST"),
+            "port": os.getenv("STPODB_PORT"),
+            "database": os.getenv("STPODB_DATABASE"),
+            "sslmode": os.getenv("STPODB_SSLMODE"),
         }
     except Exception as e:
         logger.warning("ERROR GETTING DATABASE CREDENTIALS:", e)
@@ -53,14 +46,12 @@ def get_connection_and_cursor():
 
 
 class STPOCursor(psycopg2.extensions.cursor):
-
     def execute(self, sql, args=None):
         try:
             psycopg2.extensions.cursor.execute(self, sql, args)
         except Exception as exc:
             print(f"{exc.__class__.__name__} {exc}")
             raise
-
 
     def fetchone(self):
         try:
@@ -69,14 +60,12 @@ class STPOCursor(psycopg2.extensions.cursor):
             print(f"{exc.__class__.__name__} {exc}")
             raise
 
-
     def fetchmany(self, size):
         try:
             return psycopg2.extensions.cursor.fetchmany(self, size)
         except Exception as exc:
             print(f"{exc.__class__.__name__} {exc}")
             raise
-
 
     def fetchall(self):
         try:
@@ -85,19 +74,14 @@ class STPOCursor(psycopg2.extensions.cursor):
             print(f"{exc.__class__.__name__} {exc}")
             raise
 
-
     def _complete_attributes(
-        self,
-        attributes: dict,
-        attributes_reference: list
+        self, attributes: dict, attributes_reference: list
     ) -> dict:
-
         for attribute in attributes_reference:
             if attribute not in attributes.keys():
                 attributes[attribute] = ""
-        
+
         return attributes
-    
 
     def create_table(self, context, table_attributes: dict, verbose=False) -> None:
         """
@@ -121,12 +105,18 @@ class STPOCursor(psycopg2.extensions.cursor):
             }
         """
 
-
-
         table_attributes_reference = ["name", "temp", "is_if_not_exists"]
-        column_attributes_reference = ["name", "data_type", "default", "is_null", "constraint"]
+        column_attributes_reference = [
+            "name",
+            "data_type",
+            "default",
+            "is_null",
+            "constraint",
+        ]
 
-        table_attributes = self._complete_attributes(table_attributes, table_attributes_reference)
+        table_attributes = self._complete_attributes(
+            table_attributes, table_attributes_reference
+        )
 
         # Build create table command from attributes
         create_table_text = "CREATE "
@@ -135,7 +125,7 @@ class STPOCursor(psycopg2.extensions.cursor):
         create_table_text += "TABLE "
         if table_attributes["is_if_not_exists"]:
             create_table_text += "IF NOT EXISTS"
-        create_table_text += "\n" + (' ' * SQL_INDENT)
+        create_table_text += "\n" + (" " * SQL_INDENT)
         create_table_text += "{table_name} ({field_definitions});"
 
         create_table_sql = sql.SQL(create_table_text)
@@ -149,9 +139,11 @@ class STPOCursor(psycopg2.extensions.cursor):
         column_types = []
         for col_attr in table_attributes["columns"]:
             if col_attr:
-                col_attr = self._complete_attributes(col_attr, column_attributes_reference)
+                col_attr = self._complete_attributes(
+                    col_attr, column_attributes_reference
+                )
 
-                col_name = sql.Identifier(col_attr['name'].lower())
+                col_name = sql.Identifier(col_attr["name"].lower())
                 col_text = f" {col_attr['data_type'].upper()}"
                 if col_attr["default"]:
                     col_text += f" DEFAULT {col_attr['default'].upper()}"
@@ -164,15 +156,13 @@ class STPOCursor(psycopg2.extensions.cursor):
         field_attributes = sql.SQL(", ".join(column_types))
 
         query = create_table_sql.format(
-            table_name=table_name_idn,
-            field_definitions=field_attributes
+            table_name=table_name_idn, field_definitions=field_attributes
         )
 
         if verbose:
             print(query.as_string(context))
 
         self.execute(query)
-
 
     def insert_into_table(self, context, table_row: dict, verbose=False) -> None:
         """
@@ -199,7 +189,9 @@ class STPOCursor(psycopg2.extensions.cursor):
         query = insert_statement.format(
             table_name=table_name,
             col_names=sql.SQL(", ").join(col_names),
-            col_values=sql.SQL(", ").join(sql.Placeholder() * len(table_row["column_data"]))
+            col_values=sql.SQL(", ").join(
+                sql.Placeholder() * len(table_row["column_data"])
+            ),
         )
 
         if verbose:
@@ -207,10 +199,8 @@ class STPOCursor(psycopg2.extensions.cursor):
 
         self.execute(query, col_values)
 
-
     def _output_tuples_to_dicitonaries(self, columns, output_rows):
-        """For use with select_from_table.
-        """
+        """For use with select_from_table."""
         dictionaries = []
         for output_row in output_rows:
             output_record = {}
@@ -219,13 +209,8 @@ class STPOCursor(psycopg2.extensions.cursor):
             dictionaries.append(output_record)
         return dictionaries
 
-
     def select_from_table(
-        self,
-        context,
-        select_attrs,
-        dict_output=False,
-        verbose=False
+        self, context, select_attrs, dict_output=False, verbose=False
     ):
         """
         select_attrs = {
@@ -243,8 +228,10 @@ class STPOCursor(psycopg2.extensions.cursor):
         """
         if "columns" in select_attrs.keys():
             query = sql.SQL("SELECT {columns} FROM {table_name}").format(
-                columns=sql.SQL(", ").join([sql.Identifier(col) for col in select_attrs["columns"]]),
-                table_name=sql.Identifier(select_attrs["table_name"])
+                columns=sql.SQL(", ").join(
+                    [sql.Identifier(col) for col in select_attrs["columns"]]
+                ),
+                table_name=sql.Identifier(select_attrs["table_name"]),
             )
         else:
             query_text = f"SELECT {select_attrs['text']} "
@@ -263,14 +250,14 @@ class STPOCursor(psycopg2.extensions.cursor):
                     where_conditions.append(sql.SQL(where_element["text"]))
                 else:
                     where_text = "{where_column} "
-                    where_text += where_element['operator']
+                    where_text += where_element["operator"]
                     where_condition = sql.SQL(where_text).format(
                         where_column=sql.Identifier(where_element["column"])
                     )
                     where_condition += sql.SQL(" %s")
                     where_conditions.append(where_condition)
-                    execution_values.append(where_element['value'])
-            
+                    execution_values.append(where_element["value"])
+
             query += sql.SQL(" AND").join(where_conditions)
 
         if "limit" in select_attrs.keys():
@@ -287,13 +274,10 @@ class STPOCursor(psycopg2.extensions.cursor):
 
         if dict_output:
             results = self._output_tuples_to_dicitonaries(
-                select_attrs["columns"],
-                results
+                select_attrs["columns"], results
             )
 
         # if verbose:
         #     print(results)
 
         return results
-
-

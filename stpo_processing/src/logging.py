@@ -1,28 +1,32 @@
-from datetime import datetime, timezone
 import logging
-from logging import StreamHandler
 import sys
 
-from psycopg2 import InterfaceError, DatabaseError, OperationalError
 
 from src.database import get_connection_and_cursor
 from src.constants import DEBUG, LOGGING_MODEL
 
 
 # Set stdout stream logger to logging root
-logFormatter = logging.Formatter("[%(asctime)s] [%(threadName)-15.15s] [%(levelname)-5.5s]  %(message)s")
+logFormatter = logging.Formatter(
+    "[%(asctime)s] [%(threadName)-15.15s] [%(levelname)-5.5s]  %(message)s"
+)
 rootLogger = logging.getLogger()
 
 consoleHandler = logging.StreamHandler(sys.stdout)
 consoleHandler.setFormatter(logFormatter)
 rootLogger.addHandler(consoleHandler)
-# Set local logger
-logger = logging.getLogger(__name__)
-if DEBUG:
-    logger.setLevel(logging.DEBUG)
-else:
-    logger.setLevel(logging.INFO)
 
+
+def set_local_logger(name: str):
+    logger = logging.getLogger(name)
+    if DEBUG:
+        logger.setLevel(logging.DEBUG)
+    else:
+        logger.setLevel(logging.INFO)
+    return logger
+
+
+logger = set_local_logger(__name__)
 
 logger.debug("Logger spot check")
 
@@ -41,7 +45,7 @@ class LogDBHandler(logging.Handler):
                 "constraint": "primary_key"
             },
             {
-                
+
             }
         ]
     }
@@ -58,11 +62,11 @@ class LogDBHandler(logging.Handler):
         except Exception as e:
             logger.critical("ERROR CREATING HANDLER:", e)
             raise
-    
+
     def emit(self, record):
         self.log_msg = record.msg
         self.log_msg = self.log_msg.strip()
-        self.log_msg = self.log_msg.replace("\'", "\'\'")
+        self.log_msg = self.log_msg.replace("'", "''")
 
         table_rows = {
             "table_name": LOGGING_MODEL["name"],
@@ -70,8 +74,8 @@ class LogDBHandler(logging.Handler):
                 {"name": "log_level", "value": int(record.levelno)},
                 {"name": "log_levelname", "value": str(record.levelname)},
                 {"name": "log", "value": str(self.log_msg)},
-                {"name": "created_by", "value": str(record.name)}
-            ]
+                {"name": "created_by", "value": str(record.name)},
+            ],
         }
 
         try:
@@ -88,4 +92,3 @@ class LogDBHandler(logging.Handler):
         except Exception as e:
             logger.critical(e)
             raise
-

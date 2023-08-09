@@ -4,16 +4,11 @@ from threading import Thread
 from src.constants import DEBUG, RAW_POSTS_TABLE_MODEL, STPO_MAP_MODEL, LOGGING_MODEL
 from src.database import get_connection_and_cursor, PGError
 from src.firehose import AtProtocolError
-from src.logging import LogDBHandler
+from src.logging import LogDBHandler, set_local_logger
 from src.process_loops import count_posts, package_message_handler, process_posts
 
+logger = set_local_logger(__name__)
 
-# Set local logger
-logger = logging.getLogger(__name__)
-if DEBUG:
-    logger.setLevel(logging.DEBUG)
-else:
-    logger.setLevel(logging.INFO)
 
 def main():
     logger.info("Starting up.")
@@ -22,14 +17,16 @@ def main():
         logger.debug("Initializing database logger.")
         db_log = LogDBHandler(LOGGING_MODEL["name"])
         db_log.setLevel(20)
-        logging.getLogger('').addHandler(db_log)
-        
-        logger.debug("Connecting to database to create raw and stpo_map tables (if exists).")
-        con,cur = get_connection_and_cursor()
+        logging.getLogger("").addHandler(db_log)
+
+        logger.debug(
+            "Connecting to database to create raw and stpo_map tables (if exists)."
+        )
+        con, cur = get_connection_and_cursor()
         cur.create_table(cur, RAW_POSTS_TABLE_MODEL)
         cur.create_table(cur, STPO_MAP_MODEL)
         con.close()
-        
+
         logger.debug("Defining task threads.")
         task1 = Thread(target=package_message_handler)
         task2 = Thread(target=process_posts)
@@ -73,6 +70,7 @@ def main():
     finally:
         db_log.close()
         logger.debug("ass")
+
 
 if __name__ == "__main__":
     main()

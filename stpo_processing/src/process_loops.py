@@ -1,24 +1,19 @@
 import concurrent.futures
 from datetime import datetime, timedelta, timezone
 import json
-import logging
 import time
 
-from src.constants import DEBUG, RAW_POSTS_TABLE_MODEL, STPO_MAP_MODEL
+from src.constants import RAW_POSTS_TABLE_MODEL, STPO_MAP_MODEL
 from src.database import get_connection_and_cursor, PGError
 from src.firehose import FirehoseClient, AtProtocolError
+from src.logging import set_local_logger
 from src.raw_post_processing import orchestrate_stpo
 
-
-# Set local logger
-logger = logging.getLogger(__name__)
-if DEBUG:
-    logger.setLevel(logging.DEBUG)
-else:
-    logger.setLevel(logging.INFO)
+logger = set_local_logger(__name__)
 
 # TODO: Input an error counter over time to only quit if frequency indicates
 # a systemic issue and/or a runaway loop
+
 
 def package_message_handler():
     logger.info("Starting message handler")
@@ -60,7 +55,7 @@ def count_posts():
 
                 select_post_num = {
                     "table_name": RAW_POSTS_TABLE_MODEL["name"],
-                    "text": "count(*)"
+                    "text": "count(*)",
                 }
                 results = cur.select_from_table(cur, select_post_num)
                 if results:
@@ -104,11 +99,13 @@ def process_posts():
                 last_day_of_posts = {
                     "table_name": "raw_post_data",
                     "columns": ["post_text"],
-                    "where": [{
-                        "column": "created_at",
-                        "operator": ">",
-                        "value": current_time - analysis_interval
-                    }]
+                    "where": [
+                        {
+                            "column": "created_at",
+                            "operator": ">",
+                            "value": current_time - analysis_interval,
+                        }
+                    ],
                 }
                 logger.debug("Getting posts.")
                 results = cur.select_from_table(cur, last_day_of_posts, verbose=False)
@@ -120,14 +117,15 @@ def process_posts():
                     if not posts:
                         logger.warning("NO POSTS COMING THROUGH")
                     else:
-                        
                         executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
                         process = executor.submit(orchestrate_stpo, posts, True)
                         stpo_map = process.result()
 
                         process_end = datetime.now()
                         process_interval = process_end - process_start
-                        logger.info(f"STPO map built in {process_interval.seconds} seconds")
+                        logger.info(
+                            f"STPO map built in {process_interval.seconds} seconds"
+                        )
 
                         if "post" in stpo_map.keys():
                             logger.debug("Word: post")
@@ -138,9 +136,12 @@ def process_posts():
                             "table_name": STPO_MAP_MODEL["name"],
                             "column_data": [
                                 {"name": "stpo_snapshot", "value": stpo_json},
-                                {"name": "snapshot_interval", "value": analysis_interval},
-                                {"name": "created_at", "value": current_time}
-                            ]
+                                {
+                                    "name": "snapshot_interval",
+                                    "value": analysis_interval,
+                                },
+                                {"name": "created_at", "value": current_time},
+                            ],
                         }
                         cur.insert_into_table(cur, table_row)
                         logger.info("JSON successfully saved.")

@@ -12,10 +12,13 @@ psycopg2-binary = "^2.9.6"
 nltk = "^3.8.1"
 atproto = "^0.0.23"
 python-dotenv = "^1.0.0"
+pytest = "^7.4.0"
 
 
 [tool.poetry.group.dev.dependencies]
 jupyter = "^1.0.0"
+black = "^23.7.0"
+ruff = "^0.0.283"
 
 [build-system]
 requires = ["poetry-core"]
