@@ -6,7 +6,7 @@ import time
 from atproto.exceptions import AtProtocolError
 from psycopg2 import Error as PGError
 
-from src.constants import DEBUG, STPO_MAP_MODEL, RETRY_COUNT, RETRY_DELAY
+from src.constants import DEBUG, RAW_POSTS_TABLE_MODEL, STPO_MAP_MODEL, RETRY_COUNT, RETRY_DELAY
 from src.database import get_connection_and_cursor
 from src.firehose import FirehoseClient
 from src.logging import set_local_logger
@@ -16,40 +16,40 @@ from src.utils import get_posts_count
 logger = set_local_logger(__name__)
 
 
-def loop_decorator(func):
-    logger.info(f"Starting {func.__name__}.")
-    retry_count = RETRY_COUNT
-    retries = 0
-    posts_count = get_posts_count()
+# def loop_decorator(func):
+#     logger.info(f"Starting {func.__name__}.")
+#     retry_count = RETRY_COUNT
+#     retries = 0
+#     posts_count = get_posts_count()
 
-    try:
-        while retries < retry_count:
-            try:
-                new_posts_count = get_posts_count()
-                func()
-            except AtProtocolError as e:
-                logger.error("Message Handler error:", e)
-            except PGError as e:
-                logger.error("Posgres Error:", e)
-            except Exception as e:
-                logger.error("Unknown exception:", e)
-            finally:
-                if new_posts_count > posts_count:
-                    retries = 0
-                    posts_count = new_posts_count
-                else:
-                    retries += 1
+#     try:
+#         while retries < retry_count:
+#             try:
+#                 new_posts_count = get_posts_count()
+#                 func()
+#             except AtProtocolError as e:
+#                 logger.error("Message Handler error:", e)
+#             except PGError as e:
+#                 logger.error("Posgres Error:", e)
+#             except Exception as e:
+#                 logger.error("Unknown exception:", e)
+#             finally:
+#                 if new_posts_count > posts_count:
+#                     retries = 0
+#                     posts_count = new_posts_count
+#                 else:
+#                     retries += 1
 
-                if retries < retry_count:
-                    logger.error(f"Restarting. (Retries: {retries}/{retry_count})")
-                time.sleep(RETRY_DELAY)
-    except Exception as e:
-        logger.critical(f"{func.__name__.upper()} EXCEPTION: {e}\n\nKilling.")
-        raise
+#                 if retries < retry_count:
+#                     logger.error(f"Restarting. (Retries: {retries}/{retry_count})")
+#                 time.sleep(RETRY_DELAY)
+#     except Exception as e:
+#         logger.critical(f"{func.__name__.upper()} EXCEPTION: {e}\n\nKilling.")
+#         raise
 
 
-def package_message_handler():
-    logger.info("Starting .")
+def firehose_message_handler():
+    logger.info("Starting firehose message handler.")
     retry_count = RETRY_COUNT
     retries = 0
     posts_count = get_posts_count()
@@ -81,7 +81,7 @@ def package_message_handler():
         raise
 
 def count_posts():
-    logger.info("Starting .")
+    logger.info("Starting minute by minute post counter.")
     retry_count = RETRY_COUNT
     retries = 0
     posts_count = get_posts_count()
@@ -145,7 +145,7 @@ def count_posts():
 
 
 def process_posts():
-    logger.info("Starting .")
+    logger.info("Starting post processor.")
     retry_count = RETRY_COUNT
     retries = 0
     posts_count = get_posts_count()
@@ -175,7 +175,7 @@ def process_posts():
                             analysis_interval = timedelta(days=1)
 
                             last_day_of_posts = {
-                                "table_name": "raw_post_data",
+                                "table_name": RAW_POSTS_TABLE_MODEL["name"],
                                 "columns": ["raw_post_text"],
                                 "where": [
                                     {
@@ -225,6 +225,20 @@ def process_posts():
                                     }
                                     cur.insert_into_table(cur, table_row)
                                     logger.info("JSON successfully saved.")
+                                    
+                                    # Delete old posts
+                                    delete_attrs = {
+                                        "table_name": RAW_POSTS_TABLE_MODEL["name"],
+                                        "where": [
+                                            {
+                                                "column": "created_at",
+                                                "operator": ">",
+                                                "value": current_time - (analysis_interval * 2),
+                                            }
+                                        ]
+                                    }
+                                    cur.delete_from_table(cur, delete_attrs)
+                                    logger.info(f"Deleted posts older than {analysis_interval * 2}.")
                         except PGError as e:
                             logger.error("Postgres Error:", e)
                             raise

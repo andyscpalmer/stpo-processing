@@ -91,7 +91,7 @@ class STPOCursor(psycopg2.extensions.cursor):
 
         return attributes
 
-    def create_table(self, context, table_attributes: dict, verbose=False) -> None:
+    def create_table(self, context, table_attributes: dict) -> None:
         """
         Table attributes:
             {
@@ -167,12 +167,11 @@ class STPOCursor(psycopg2.extensions.cursor):
             table_name=table_name_idn, field_definitions=field_attributes
         )
 
-        if verbose:
-            print(query.as_string(context))
+        logger.debug(query.as_string(context))
 
         self.execute(query)
 
-    def insert_into_table(self, context, table_row: dict, verbose=False) -> None:
+    def insert_into_table(self, context, table_row: dict) -> None:
         """
         table_row = {
             "table_name": "<table_name>",
@@ -202,8 +201,7 @@ class STPOCursor(psycopg2.extensions.cursor):
             ),
         )
 
-        if verbose:
-            print(query.as_string(context))
+        logger.debug(query.as_string(context))
 
         self.execute(query, col_values)
 
@@ -217,8 +215,29 @@ class STPOCursor(psycopg2.extensions.cursor):
             dictionaries.append(output_record)
         return dictionaries
 
+    def process_where_conditions(self, query, execution_values, where_attrs):
+        query += sql.SQL(" WHERE ")
+        where_conditions = []
+        for where_element in where_attrs:
+            if "text" in where_element.keys():
+                # Don't use this if you can avoid it
+                where_conditions.append(sql.SQL(where_element["text"]))
+            else:
+                where_text = "{where_column} "
+                where_text += where_element["operator"]
+                where_condition = sql.SQL(where_text).format(
+                    where_column=sql.Identifier(where_element["column"])
+                )
+                where_condition += sql.SQL(" %s")
+                where_conditions.append(where_condition)
+                execution_values.append(where_element["value"])
+
+        query += sql.SQL(" AND").join(where_conditions)
+
+        return query, execution_values
+
     def select_from_table(
-        self, context, select_attrs, dict_output=False, verbose=False
+        self, context, select_attrs, dict_output=False
     ):
         """
         select_attrs = {
@@ -230,7 +249,7 @@ class STPOCursor(psycopg2.extensions.cursor):
                     "operator": "<comparison_operator>",
                     "value": <comparison_value>
                 }, {...}, ...
-            ]
+            ],
             "limit" <optional>: <int>
         }
         """
@@ -250,23 +269,24 @@ class STPOCursor(psycopg2.extensions.cursor):
         execution_values = []
 
         if "where" in select_attrs.keys():
-            query += sql.SQL(" WHERE ")
-            where_conditions = []
-            for where_element in select_attrs["where"]:
-                if "text" in where_element.keys():
-                    # Don't use this if you can avoid it
-                    where_conditions.append(sql.SQL(where_element["text"]))
-                else:
-                    where_text = "{where_column} "
-                    where_text += where_element["operator"]
-                    where_condition = sql.SQL(where_text).format(
-                        where_column=sql.Identifier(where_element["column"])
-                    )
-                    where_condition += sql.SQL(" %s")
-                    where_conditions.append(where_condition)
-                    execution_values.append(where_element["value"])
+            query, execution_values = self.process_where_conditions(self, query, execution_values, select_attrs["where"])
+            # query += sql.SQL(" WHERE ")
+            # where_conditions = []
+            # for where_element in select_attrs["where"]:
+            #     if "text" in where_element.keys():
+            #         # Don't use this if you can avoid it
+            #         where_conditions.append(sql.SQL(where_element["text"]))
+            #     else:
+            #         where_text = "{where_column} "
+            #         where_text += where_element["operator"]
+            #         where_condition = sql.SQL(where_text).format(
+            #             where_column=sql.Identifier(where_element["column"])
+            #         )
+            #         where_condition += sql.SQL(" %s")
+            #         where_conditions.append(where_condition)
+            #         execution_values.append(where_element["value"])
 
-            query += sql.SQL(" AND").join(where_conditions)
+            # query += sql.SQL(" AND").join(where_conditions)
 
         if "limit" in select_attrs.keys():
             query += sql.SQL(f" LIMIT {select_attrs['limit']}")
@@ -289,7 +309,30 @@ class STPOCursor(psycopg2.extensions.cursor):
                 select_attrs["columns"], results
             )
 
-        # if verbose:
-        #     print(results)
-
         return results
+
+    def delete_from_table(self, context, delete_attrs: dict) -> None:
+        """
+        delete_attrs = {
+            "table_name": "<table_name>",
+            "where": [
+                {
+                    "column": "<col_name>",
+                    "operator": "<comparison_operator>",
+                    "value": <comparison_value>
+                }, {...}, ...
+            ]
+        }
+        """
+        query_text = "DELETE FROM {table_name}"
+        query = sql.SQL(query_text).format(
+            table_name=sql.Identifier(delete_attrs["table_name"])
+        )
+        query, execution_values = self.process_where_conditions(self, query, execution_values, delete_attrs["where"])
+
+        query += sql.SQL(";")
+
+        logger.info(f"Executing: {query.as_string(context)}, Values: {execution_values}")
+
+        self.execute(query, execution_values)
+

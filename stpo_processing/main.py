@@ -13,7 +13,7 @@ from src.constants import (
 )
 from src.database import get_connection_and_cursor
 from src.logging import LogDBHandler, set_local_logger
-from src.process_loops import loop_decorator, count_posts, package_message_handler, process_posts
+from src.process_loops import count_posts, firehose_message_handler, process_posts
 
 logger = set_local_logger(__name__)
 
@@ -36,7 +36,7 @@ def main():
         con.close()
 
         logger.info("Defining task threads.")
-        task1 = Thread(target=package_message_handler)
+        task1 = Thread(target=firehose_message_handler)
         task2 = Thread(target=process_posts)
         if DEBUG or POST_COUNTING:
             task3 = Thread(target=count_posts)
