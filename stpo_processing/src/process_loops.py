@@ -186,7 +186,7 @@ def process_posts():
                                 ],
                             }
                             logger.debug("Getting posts.")
-                            results = cur.select_from_table(cur, last_day_of_posts, verbose=DEBUG)
+                            results = cur.select_from_table(cur, last_day_of_posts)
                             if results:
                                 logger.debug("Building STPO map.")
                                 process_start = datetime.now()

@@ -3,6 +3,7 @@ from time import perf_counter
 
 import nltk
 
+from .constants import DEBUG
 from .logging import set_local_logger
 
 logger = set_local_logger(__name__)
@@ -128,7 +129,7 @@ def build_post_families(
     return repetitive_posts
 
 
-def get_post_word_separation(posts, verbose=False):
+def get_post_word_separation(posts):
     separation_indexed_word_pairs = []
 
     for post_words in posts:
@@ -211,12 +212,10 @@ def combine_stpo_maps(stpo_maps: list) -> dict:
     return super_stpo_map
 
 
-def orchestrate_stpo(posts, verbose=False):
-    if verbose:
-        logger.debug(f"Number of posts: {len(posts)}")
+def orchestrate_stpo(posts):
+    logger.debug(f"Number of posts: {len(posts)}")
     repetitive_posts = build_post_families(posts)
-    if verbose:
-        logger.debug(f"Number of repetitive posts: {len(repetitive_posts)}")
+    logger.debug(f"Number of repetitive posts: {len(repetitive_posts)}")
     separation_indexed_word_pairs = get_post_word_separation(repetitive_posts)
     stpo_map = build_stpo_map(separation_indexed_word_pairs)
     return stpo_map
@@ -245,11 +244,10 @@ def stpo_map_to_cfdist_map(separation_to_pair_occurrences):
     return separation_to_cfdist
 
 
-def get_post_score(post, separation_to_cfdist, verbose=False, very_verbose=False):
+def get_post_score(post, separation_to_cfdist):
     post_format = format_post(post)
     post_words = post_format.split()
-    if verbose or very_verbose:
-        print(post_words)
+    logger.debug(post_words)
     post_len = len(post_words)
 
     score = 0
@@ -271,16 +269,15 @@ def get_post_score(post, separation_to_cfdist, verbose=False, very_verbose=False
                         post_len - N
                     )
 
-                    if very_verbose:
+                    if DEBUG:
                         sub_sub_score = cfd[post_words[i]].freq(post_words[i + N]) / (
                             post_len - N
                         )
-                        print(post_words[i], post_words[i + N], sub_sub_score)
+                        logger.debug(post_words[i], post_words[i + N], sub_sub_score)
 
                 score += 10 * sub_score * depth_coefficient
 
-                if verbose or very_verbose:
-                    print(N, sub_score)
+                logger.debug(N, sub_score)
 
     score += length_penalty
 
@@ -288,7 +285,7 @@ def get_post_score(post, separation_to_cfdist, verbose=False, very_verbose=False
 
 
 # Performance testing tool
-def get_config_performance(posts, test_configurations, verbose=False):
+def get_config_performance(posts, test_configurations):
     collected_test_results = []
     total_posts = len(posts)
 
@@ -297,7 +294,7 @@ def get_config_performance(posts, test_configurations, verbose=False):
         collected_test_result = test_configuration
         start_time = perf_counter()
         post_family_collection = build_post_families(
-            posts, **test_configuration, verbose=verbose
+            posts, **test_configuration
         )
         build_post_families_end = perf_counter()
         repetitive_posts = combine_post_families(post_family_collection)

@@ -10,17 +10,17 @@ logger = set_local_logger(__name__)
 
 
 def create_table(cur, table_attributes):
-    cur.create_table(cur, table_attributes, verbose=True)
+    cur.create_table(cur, table_attributes)
 
 
 def insert_into_table(cur, table_rows):
     for table_row in table_rows:
-        cur.insert_into_table(cur, table_row, verbose=True)
+        cur.insert_into_table(cur, table_row)
 
 
 def select_from_table(cur, select_attrs, dict_output=False):
     result = cur.select_from_table(
-        cur, select_attrs, dict_output=dict_output, verbose=True
+        cur, select_attrs, dict_output=dict_output
     )
     return result
 
