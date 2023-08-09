@@ -11,7 +11,7 @@ from .constants import DEBUG, LOGGING_MODEL
 #     "[%(asctime)s] [%(threadName)-15.15s] [%(levelname)-5.5s]  %(message)s"
 # )
 logFormatter = logging.Formatter(
-    "[%(threadName)-7.7s][%(levelname)-5.5s][%(module)-10.10s]  %(message)s"
+    "[%(threadName)-10.10s][%(levelname)-5.5s][%(module)-8.8s]  %(message)s"
 )
 rootLogger = logging.getLogger()
 

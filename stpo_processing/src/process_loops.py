@@ -65,7 +65,7 @@ def count_posts():
                     count = results[0][0]
                     intermediate_posts = count - previous_post_count
                     previous_post_count = count
-                    logger.debug(f"Posts in last minute: {intermediate_posts}")
+                    logger.info(f"Posts in last minute: {intermediate_posts}")
                     logger.debug(f"Total post count: {count}")
             except PGError as e:
                 logger.error("Postgres Error. Likely non-critical:", e)
@@ -131,8 +131,7 @@ def process_posts():
                         )
 
                         if "post" in stpo_map.keys():
-                            logger.debug("Word: post")
-                            logger.debug(stpo_map[1]["post"])
+                            logger.info(f"Words following 'post':\n{json.dumps(stpo_map[1]['post'], indent=2)}")
 
                         stpo_json = json.dumps(stpo_map)
                         table_row = {
