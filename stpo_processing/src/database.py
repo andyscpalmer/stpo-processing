@@ -273,12 +273,15 @@ class STPOCursor(psycopg2.extensions.cursor):
 
         query += sql.SQL(";")
 
-        if verbose:
-            print(query.as_string(context))
+        logger.debug(f"Executing: {query.as_string(context)}")
 
         self.execute(query, execution_values)
 
+        logger.debug("Select query executed. Fetching results.")
+
         results = self.fetchall()
+
+        logger.debug(f"Results retrieved. Length of results: {len(results)}")
 
         if dict_output:
             results = self._output_tuples_to_dicitonaries(

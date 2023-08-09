@@ -7,8 +7,11 @@ from .constants import DEBUG, LOGGING_MODEL
 
 
 # Set stdout stream logger to logging root
+# logFormatter = logging.Formatter(
+#     "[%(asctime)s] [%(threadName)-15.15s] [%(levelname)-5.5s]  %(message)s"
+# )
 logFormatter = logging.Formatter(
-    "[%(asctime)s] [%(threadName)-15.15s] [%(levelname)-5.5s]  %(message)s"
+    "[%(threadName)-20.20s] [%(levelname)-5.5s]  %(message)s"
 )
 rootLogger = logging.getLogger()
 
