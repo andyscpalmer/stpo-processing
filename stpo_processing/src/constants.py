@@ -1,4 +1,4 @@
-DEBUG = False
+DEBUG = True
 
 SQL_INDENT = 4
 
