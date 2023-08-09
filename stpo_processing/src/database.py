@@ -268,7 +268,7 @@ class STPOCursor(psycopg2.extensions.cursor):
 
         if "where" in select_attrs.keys():
             query, execution_values = self.process_where_conditions(
-                self, query, execution_values, select_attrs["where"]
+                query, execution_values, select_attrs["where"]
             )
             # query += sql.SQL(" WHERE ")
             # where_conditions = []
@@ -330,7 +330,7 @@ class STPOCursor(psycopg2.extensions.cursor):
         )
         execution_values = []
         query, execution_values = self.process_where_conditions(
-            self, query, execution_values, delete_attrs["where"]
+            query, execution_values, delete_attrs["where"]
         )
 
         query += sql.SQL(";")
