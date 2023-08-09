@@ -1,6 +1,11 @@
-DEBUG = True
+DEBUG = False
+
+POST_COUNTING = True
 
 SQL_INDENT = 4
+
+RETRY_COUNT = 10
+RETRY_DELAY = 1
 
 RAW_POSTS_TABLE_MODEL = {
     "name": "raw_post_data",

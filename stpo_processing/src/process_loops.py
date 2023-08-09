@@ -6,43 +6,64 @@ import time
 from atproto.exceptions import AtProtocolError
 from psycopg2 import Error as PGError
 
-from src.constants import DEBUG, RAW_POSTS_TABLE_MODEL, STPO_MAP_MODEL
+from src.constants import DEBUG, STPO_MAP_MODEL, RETRY_COUNT, RETRY_DELAY
 from src.database import get_connection_and_cursor
 from src.firehose import FirehoseClient
 from src.logging import set_local_logger
 from src.raw_post_processing import orchestrate_stpo
+from src.utils import get_posts_count
 
 logger = set_local_logger(__name__)
 
-# TODO: Input an error counter over time to only quit if frequency indicates
-# a systemic issue and/or a runaway loop
 
+def loop_decorator(func):
+    logger.info(f"Starting {func.__name__}.")
+    retry_count = RETRY_COUNT
+    retries = 0
+    posts_count = get_posts_count()
 
-def package_message_handler():
-    logger.info("Starting message handler")
     try:
-        while True:
+        while retries < retry_count:
             try:
-                client = FirehoseClient()
-                client.drink_from_firehose()
+                new_posts_count = get_posts_count()
+                func()
             except AtProtocolError as e:
                 logger.error("Message Handler error:", e)
-                logger.error("Restarting.")
             except PGError as e:
                 logger.error("Posgres Error:", e)
-                logger.error("Restarting.")
+            except Exception as e:
+                logger.error("Unknown exception:", e)
             finally:
-                client.close_db_connection()
+                if new_posts_count > posts_count:
+                    retries = 0
+                    posts_count = new_posts_count
+                else:
+                    retries += 1
 
+                if retries < retry_count:
+                    logger.error(f"Restarting. (Retries: {retries}/{retry_count})")
+                time.sleep(RETRY_DELAY)
     except Exception as e:
-        logger.critical("MESSAGE HANDLER EXCEPTION:", e)
+        logger.critical(f"{func.__name__.upper()} EXCEPTION: {e}\n\nKilling.")
         raise
 
 
+@loop_decorator
+def package_message_handler():
+    try:
+        client = FirehoseClient()
+        client.drink_from_firehose()
+    except Exception as e:
+        logger.error(f"Error with firehose: {e}")
+        raise
+    finally:
+        client.close_db_connection()
+
+
+@loop_decorator
 def count_posts():
-    logger.info("Starting post counter")
     interval = 0.2
-    previous_post_count = 0
+    previous_post_count = get_posts_count()
     previous_time = datetime.now(timezone.utc)
     two_seconds = timedelta(seconds=2)
     while True:
@@ -53,34 +74,26 @@ def count_posts():
 
         if is_over_two_sec and is_new_minute:
             try:
-                con, cur = get_connection_and_cursor()
-                previous_time = datetime.now(timezone.utc)
-
-                select_post_num = {
-                    "table_name": RAW_POSTS_TABLE_MODEL["name"],
-                    "text": "count(*)",
-                }
-                results = cur.select_from_table(cur, select_post_num)
-                if results:
-                    count = results[0][0]
+                count = get_posts_count()
+                if count:
                     intermediate_posts = count - previous_post_count
                     previous_post_count = count
                     logger.info(f"Posts in last minute: {intermediate_posts}")
                     logger.debug(f"Total post count: {count}")
+                else:
+                    logger.info(f"Posts count returned {count}.")
             except PGError as e:
-                logger.error("Postgres Error. Likely non-critical:", e)
-                logger.error("Restarting.")
+                logger.error("Postgres Error:", e)
+                raise
             except Exception as e:
                 logger.critical("Unknown Error counting posts:", e)
                 raise
-            finally:
-                con.close()
 
         time.sleep(interval)
 
 
+@loop_decorator
 def process_posts():
-    logger.info("Starting post processor")
     interval = 1
     previous_time = datetime.now(timezone.utc)
     two_minutes = timedelta(seconds=120)
@@ -131,7 +144,10 @@ def process_posts():
                         )
 
                         if "post" in stpo_map.keys():
-                            logger.info(f"Words following 'post':\n{json.dumps(stpo_map[1]['post'], indent=2)}")
+                            logger.info(
+                                "Words following 'post':\n"
+                                f"{json.dumps(stpo_map[1]['post'], indent=2)}"
+                            )
 
                         stpo_json = json.dumps(stpo_map)
                         table_row = {
@@ -149,7 +165,10 @@ def process_posts():
                         logger.info("JSON successfully saved.")
             except PGError as e:
                 logger.error("Postgres Error:", e)
-                logger.info("Restarting.")
+                raise
+            except Exception as e:
+                logger.critical("Unknown Error counting posts:", e)
+                raise
             finally:
                 con.close()
 

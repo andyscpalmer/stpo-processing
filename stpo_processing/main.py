@@ -4,8 +4,15 @@ from threading import Thread
 from atproto.exceptions import AtProtocolError
 from psycopg2 import Error as PGError
 
-from src.constants import DEBUG, RAW_POSTS_TABLE_MODEL, STPO_MAP_MODEL, LOGGING_MODEL
+from src.constants import (
+    DEBUG,
+    POST_COUNTING,
+    RAW_POSTS_TABLE_MODEL,
+    STPO_MAP_MODEL,
+    LOGGING_MODEL,
+)
 from src.database import get_connection_and_cursor
+
 # from src.firehose import AtProtocolError
 from src.logging import LogDBHandler, set_local_logger
 from src.process_loops import count_posts, package_message_handler, process_posts
@@ -40,14 +47,14 @@ def main():
         logger.debug("Starting task threads.")
         task1.start()
         task2.start()
-        if DEBUG:
+        if DEBUG or POST_COUNTING:
             task3.start()
 
         # end all tasks
         logger.debug("Starting .join() for all tasks.")
         task1.join()
         task2.join()
-        if DEBUG:
+        if DEBUG or POST_COUNTING:
             task3.join()
 
         logger.info("Tasks ended. Attempting to close gracefully.")
