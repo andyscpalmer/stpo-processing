@@ -101,7 +101,7 @@ def process_posts():
 
                 last_day_of_posts = {
                     "table_name": "raw_post_data",
-                    "columns": ["post_text"],
+                    "columns": ["raw_post_text"],
                     "where": [
                         {
                             "column": "created_at",
