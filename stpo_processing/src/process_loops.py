@@ -48,7 +48,6 @@ def loop_decorator(func):
         raise
 
 
-@loop_decorator
 def package_message_handler():
     try:
         client = FirehoseClient()
@@ -60,7 +59,6 @@ def package_message_handler():
         client.close_db_connection()
 
 
-@loop_decorator
 def count_posts():
     interval = 0.2
     previous_post_count = get_posts_count()
@@ -92,7 +90,6 @@ def count_posts():
         time.sleep(interval)
 
 
-@loop_decorator
 def process_posts():
     interval = 1
     previous_time = datetime.now(timezone.utc)

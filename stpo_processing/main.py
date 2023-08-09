@@ -13,7 +13,7 @@ from src.constants import (
 )
 from src.database import get_connection_and_cursor
 from src.logging import LogDBHandler, set_local_logger
-from src.process_loops import count_posts, package_message_handler, process_posts
+from src.process_loops import loop_decorator, count_posts, package_message_handler, process_posts
 
 logger = set_local_logger(__name__)
 
@@ -36,10 +36,10 @@ def main():
         con.close()
 
         logger.info("Defining task threads.")
-        task1 = Thread(target=package_message_handler)
-        task2 = Thread(target=process_posts)
+        task1 = Thread(target=loop_decorator(package_message_handler))
+        task2 = Thread(target=loop_decorator(process_posts))
         if DEBUG or POST_COUNTING:
-            task3 = Thread(target=count_posts)
+            task3 = Thread(target=loop_decorator(count_posts))
 
         # Start threads
         logger.info("Starting task threads.")
