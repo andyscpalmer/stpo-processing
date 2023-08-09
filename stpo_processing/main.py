@@ -6,14 +6,12 @@ from psycopg2 import Error as PGError
 
 from src.constants import (
     DEBUG,
+    LOGGING_MODEL,
     POST_COUNTING,
     RAW_POSTS_TABLE_MODEL,
     STPO_MAP_MODEL,
-    LOGGING_MODEL,
 )
 from src.database import get_connection_and_cursor
-
-# from src.firehose import AtProtocolError
 from src.logging import LogDBHandler, set_local_logger
 from src.process_loops import count_posts, package_message_handler, process_posts
 
@@ -40,7 +38,7 @@ def main():
         logger.debug("Defining task threads.")
         task1 = Thread(target=package_message_handler)
         task2 = Thread(target=process_posts)
-        if DEBUG:
+        if DEBUG or POST_COUNTING:
             task3 = Thread(target=count_posts)
 
         # Start threads
