@@ -19,9 +19,7 @@ def insert_into_table(cur, table_rows):
 
 
 def select_from_table(cur, select_attrs, dict_output=False):
-    result = cur.select_from_table(
-        cur, select_attrs, dict_output=dict_output
-    )
+    result = cur.select_from_table(cur, select_attrs, dict_output=dict_output)
     return result
 
 

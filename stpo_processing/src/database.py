@@ -236,9 +236,7 @@ class STPOCursor(psycopg2.extensions.cursor):
 
         return query, execution_values
 
-    def select_from_table(
-        self, context, select_attrs, dict_output=False
-    ):
+    def select_from_table(self, context, select_attrs, dict_output=False):
         """
         select_attrs = {
             "table_name": "<table_name>",
@@ -269,7 +267,9 @@ class STPOCursor(psycopg2.extensions.cursor):
         execution_values = []
 
         if "where" in select_attrs.keys():
-            query, execution_values = self.process_where_conditions(self, query, execution_values, select_attrs["where"])
+            query, execution_values = self.process_where_conditions(
+                self, query, execution_values, select_attrs["where"]
+            )
             # query += sql.SQL(" WHERE ")
             # where_conditions = []
             # for where_element in select_attrs["where"]:
@@ -328,11 +328,15 @@ class STPOCursor(psycopg2.extensions.cursor):
         query = sql.SQL(query_text).format(
             table_name=sql.Identifier(delete_attrs["table_name"])
         )
-        query, execution_values = self.process_where_conditions(self, query, execution_values, delete_attrs["where"])
+        execution_values = []
+        query, execution_values = self.process_where_conditions(
+            self, query, execution_values, delete_attrs["where"]
+        )
 
         query += sql.SQL(";")
 
-        logger.info(f"Executing: {query.as_string(context)}, Values: {execution_values}")
+        logger.info(
+            f"Executing: {query.as_string(context)}, Values: {execution_values}"
+        )
 
         self.execute(query, execution_values)
-

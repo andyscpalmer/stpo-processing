@@ -6,7 +6,12 @@ import time
 from atproto.exceptions import AtProtocolError
 from psycopg2 import Error as PGError
 
-from src.constants import DEBUG, RAW_POSTS_TABLE_MODEL, STPO_MAP_MODEL, RETRY_COUNT, RETRY_DELAY
+from src.constants import (
+    RAW_POSTS_TABLE_MODEL,
+    STPO_MAP_MODEL,
+    RETRY_COUNT,
+    RETRY_DELAY,
+)
 from src.database import get_connection_and_cursor
 from src.firehose import FirehoseClient
 from src.logging import set_local_logger
@@ -80,6 +85,7 @@ def firehose_message_handler():
         logger.critical(f"FIREHOSE EXCEPTION: {e}\n\nKilling.")
         raise
 
+
 def count_posts():
     logger.info("Starting minute by minute post counter.")
     retry_count = RETRY_COUNT
@@ -108,7 +114,9 @@ def count_posts():
                             if count > 0:
                                 intermediate_posts = count - previous_post_count
                                 previous_post_count = count
-                                logger.info(f"Posts in last minute: {intermediate_posts}")
+                                logger.info(
+                                    f"Posts in last minute: {intermediate_posts}"
+                                )
                                 logger.debug(f"Total post count: {count}")
                                 previous_time = current_time
                             else:
@@ -195,8 +203,12 @@ def process_posts():
                                 if not posts:
                                     logger.warning("NO POSTS COMING THROUGH")
                                 else:
-                                    executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
-                                    process = executor.submit(orchestrate_stpo, posts, True)
+                                    executor = concurrent.futures.ThreadPoolExecutor(
+                                        max_workers=1
+                                    )
+                                    process = executor.submit(
+                                        orchestrate_stpo, posts, True
+                                    )
                                     stpo_map = process.result()
 
                                     process_end = datetime.now()
@@ -215,17 +227,23 @@ def process_posts():
                                     table_row = {
                                         "table_name": STPO_MAP_MODEL["name"],
                                         "column_data": [
-                                            {"name": "stpo_snapshot", "value": stpo_json},
+                                            {
+                                                "name": "stpo_snapshot",
+                                                "value": stpo_json,
+                                            },
                                             {
                                                 "name": "snapshot_interval",
                                                 "value": analysis_interval,
                                             },
-                                            {"name": "created_at", "value": current_time},
+                                            {
+                                                "name": "created_at",
+                                                "value": current_time,
+                                            },
                                         ],
                                     }
                                     cur.insert_into_table(cur, table_row)
                                     logger.info("JSON successfully saved.")
-                                    
+
                                     # Delete old posts
                                     delete_attrs = {
                                         "table_name": RAW_POSTS_TABLE_MODEL["name"],
@@ -233,12 +251,15 @@ def process_posts():
                                             {
                                                 "column": "created_at",
                                                 "operator": ">",
-                                                "value": current_time - (analysis_interval * 2),
+                                                "value": current_time
+                                                - (analysis_interval * 2),
                                             }
-                                        ]
+                                        ],
                                     }
                                     cur.delete_from_table(cur, delete_attrs)
-                                    logger.info(f"Deleted posts older than {analysis_interval * 2}.")
+                                    logger.info(
+                                        f"Deleted posts older than {analysis_interval * 2}."
+                                    )
                         except PGError as e:
                             logger.error("Postgres Error:", e)
                             raise

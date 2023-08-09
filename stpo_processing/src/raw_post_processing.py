@@ -293,9 +293,7 @@ def get_config_performance(posts, test_configurations):
         logger.debug(f"Config: {test_configuration}")
         collected_test_result = test_configuration
         start_time = perf_counter()
-        post_family_collection = build_post_families(
-            posts, **test_configuration
-        )
+        post_family_collection = build_post_families(posts, **test_configuration)
         build_post_families_end = perf_counter()
         repetitive_posts = combine_post_families(post_family_collection)
         repetitive_posts_end = perf_counter()
