@@ -36,10 +36,10 @@ def main():
         con.close()
 
         logger.info("Defining task threads.")
-        task1 = Thread(target=loop_decorator(package_message_handler))
-        task2 = Thread(target=loop_decorator(process_posts))
+        task1 = Thread(target=package_message_handler)
+        task2 = Thread(target=process_posts)
         if DEBUG or POST_COUNTING:
-            task3 = Thread(target=loop_decorator(count_posts))
+            task3 = Thread(target=count_posts)
 
         # Start threads
         logger.info("Starting task threads.")
