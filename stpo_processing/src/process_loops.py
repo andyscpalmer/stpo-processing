@@ -105,11 +105,12 @@ def count_posts():
                     if is_over_two_sec and is_new_minute:
                         try:
                             count = get_posts_count()
-                            if count:
+                            if count > 0:
                                 intermediate_posts = count - previous_post_count
                                 previous_post_count = count
                                 logger.info(f"Posts in last minute: {intermediate_posts}")
                                 logger.debug(f"Total post count: {count}")
+                                previous_time = current_time
                             else:
                                 logger.info(f"Posts count returned {count}.")
                         except PGError as e:
