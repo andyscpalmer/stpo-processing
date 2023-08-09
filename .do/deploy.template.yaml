@@ -1,4 +1,9 @@
 spec:
   name: stpo-processing
   services:
-   - name: 
+  - name: stpo-processing
+    git:
+      branch: main
+      repo_clone_url: https://github.com/andipalmur/stpo-processing.git
+  databases:
+  - name: test-db
