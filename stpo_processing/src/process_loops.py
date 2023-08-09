@@ -3,9 +3,12 @@ from datetime import datetime, timedelta, timezone
 import json
 import time
 
+from atproto.exceptions import AtProtocolError
+from psycopg2 import Error as PGError
+
 from src.constants import RAW_POSTS_TABLE_MODEL, STPO_MAP_MODEL
-from src.database import get_connection_and_cursor, PGError
-from src.firehose import FirehoseClient, AtProtocolError
+from src.database import get_connection_and_cursor
+from src.firehose import FirehoseClient
 from src.logging import set_local_logger
 from src.raw_post_processing import orchestrate_stpo
 
