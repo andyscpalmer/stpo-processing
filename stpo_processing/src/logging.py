@@ -6,10 +6,6 @@ from .database import get_connection_and_cursor
 from .constants import DEBUG, LOGGING_MODEL
 
 
-# Set stdout stream logger to logging root
-# logFormatter = logging.Formatter(
-#     "[%(asctime)s] [%(threadName)-15.15s] [%(levelname)-5.5s]  %(message)s"
-# )
 logFormatter = logging.Formatter(
     "[%(threadName)-8.8s][%(levelname)-5.5s][%(module)-8.8s]  %(message)s"
 )
