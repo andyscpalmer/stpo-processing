@@ -3,7 +3,7 @@ DEBUG = True
 SQL_INDENT = 4
 
 RAW_POSTS_TABLE_MODEL = {
-    "name": "raw_post_data_test",
+    "name": "raw_post_data",
     "temp": False,
     "is_if_not_exists": True,
     "columns": [

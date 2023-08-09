@@ -274,6 +274,7 @@ class STPOCursor(psycopg2.extensions.cursor):
         query += sql.SQL(";")
 
         logger.debug(f"Executing: {query.as_string(context)}")
+        logger.debug(f"Execution values: {execution_values}")
 
         self.execute(query, execution_values)
 
