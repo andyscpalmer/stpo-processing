@@ -22,12 +22,12 @@ def main():
     logger.info("Starting up.")
 
     try:
-        logger.debug("Initializing database logger.")
+        logger.info("Initializing database logger.")
         db_log = LogDBHandler(LOGGING_MODEL["name"])
         db_log.setLevel(20)
         logging.getLogger("").addHandler(db_log)
 
-        logger.debug(
+        logger.info(
             "Connecting to database to create raw and stpo_map tables (if exists)."
         )
         con, cur = get_connection_and_cursor()
@@ -35,21 +35,21 @@ def main():
         cur.create_table(cur, STPO_MAP_MODEL)
         con.close()
 
-        logger.debug("Defining task threads.")
+        logger.info("Defining task threads.")
         task1 = Thread(target=package_message_handler)
         task2 = Thread(target=process_posts)
         if DEBUG or POST_COUNTING:
             task3 = Thread(target=count_posts)
 
         # Start threads
-        logger.debug("Starting task threads.")
+        logger.info("Starting task threads.")
         task1.start()
         task2.start()
         if DEBUG or POST_COUNTING:
             task3.start()
 
         # end all tasks
-        logger.debug("Starting .join() for all tasks.")
+        logger.info("Starting .join() for all tasks.")
         task1.join()
         task2.join()
         if DEBUG or POST_COUNTING:
