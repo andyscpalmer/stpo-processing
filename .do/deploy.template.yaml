@@ -5,5 +5,12 @@ spec:
     git:
       branch: main
       repo_clone_url: https://github.com/andipalmur/stpo-processing.git
+    envs:
+    - key: DB_TEST_1
+      value: "TEST_DB_PASSWORD"
+      type: secret
+    - key: DATABASE_URL
+      scope: RUN_TIME
+      value: ${test-db.DATABASE_URL}
   databases:
   - name: test-db
