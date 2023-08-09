@@ -6,7 +6,7 @@ import time
 from atproto.exceptions import AtProtocolError
 from psycopg2 import Error as PGError
 
-from src.constants import RAW_POSTS_TABLE_MODEL, STPO_MAP_MODEL
+from src.constants import DEBUG, RAW_POSTS_TABLE_MODEL, STPO_MAP_MODEL
 from src.database import get_connection_and_cursor
 from src.firehose import FirehoseClient
 from src.logging import set_local_logger
@@ -111,7 +111,7 @@ def process_posts():
                     ],
                 }
                 logger.debug("Getting posts.")
-                results = cur.select_from_table(cur, last_day_of_posts, verbose=False)
+                results = cur.select_from_table(cur, last_day_of_posts, verbose=DEBUG)
                 if results:
                     logger.debug("Building STPO map.")
                     process_start = datetime.now()
