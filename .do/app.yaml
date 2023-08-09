@@ -1,6 +1,7 @@
 name: stpo-processing
 services:
 - environment_slug: python
+  dockerfile_path: Dockerfile
   github:
     branch: main
     deploy_on_push: true
