@@ -20,6 +20,7 @@ load_dotenv()
 
 def get_database_credentials() -> dict:
     try:
+        logger.debug("Getting database credentials.")
         database_credentials = {
             "user": os.getenv("STPODB_USER"),
             "password": os.getenv("STPODB_PASSWORD"),
@@ -37,9 +38,13 @@ def get_database_credentials() -> dict:
 
 def get_connection_and_cursor():
     try:
+        logger.debug("Getting connection and cursor.")
         db_creds = get_database_credentials()
+        logger.debug("Database credentials retrieved.")
         connection = psycopg2.connect(**db_creds)
+        logger.debug("Connection established.")
         cursor = connection.cursor(cursor_factory=STPOCursor)
+        logger.debug("Cursor created.")
         connection.autocommit = True
     except Exception as e:
         logger.warning("ERROR GETTING CONNECTION AND CURSOR:", e)
