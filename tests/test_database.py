@@ -1,11 +1,10 @@
 from datetime import datetime, timedelta
-import sys
 
 import psycopg2
 
-sys.path.append("./stpo_processing")
-from src.database import get_database_credentials, STPOCursor
-from src.logging import set_local_logger
+# sys.path.append("./stpo_processing")
+from stpo_processing.src.database import get_database_credentials, STPOCursor
+from stpo_processing.src.logging import set_local_logger
 
 logger = set_local_logger(__name__)
 

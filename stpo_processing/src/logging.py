@@ -2,8 +2,8 @@ import logging
 import sys
 
 
-from src.database import get_connection_and_cursor
-from src.constants import DEBUG, LOGGING_MODEL
+from .database import get_connection_and_cursor
+from .constants import DEBUG, LOGGING_MODEL
 
 
 # Set stdout stream logger to logging root

@@ -4,16 +4,10 @@ from threading import Thread
 from src.constants import DEBUG, RAW_POSTS_TABLE_MODEL, STPO_MAP_MODEL, LOGGING_MODEL
 from src.database import get_connection_and_cursor, PGError
 from src.firehose import AtProtocolError
-from src.logging import LogDBHandler
+from src.logging import LogDBHandler, set_local_logger
 from src.process_loops import count_posts, package_message_handler, process_posts
 
-
-# Set local logger
-logger = logging.getLogger(__name__)
-if DEBUG:
-    logger.setLevel(logging.DEBUG)
-else:
-    logger.setLevel(logging.INFO)
+logger = set_local_logger(__name__)
 
 
 def main():

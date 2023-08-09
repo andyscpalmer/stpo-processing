@@ -1,0 +1,4 @@
+spec:
+  name: stpo-processing
+  services:
+   - name: 

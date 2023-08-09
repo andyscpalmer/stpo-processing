@@ -1,3 +1,4 @@
+import logging
 import os
 
 from dotenv import load_dotenv
@@ -5,11 +6,13 @@ import psycopg2
 import psycopg2.extensions
 from psycopg2 import sql
 
-from src.constants import SQL_INDENT
-from src.logging import set_local_logger
+from .constants import DEBUG, SQL_INDENT
 
-logger = set_local_logger(__name__)
-
+logger = logging.getLogger(__name__)
+if DEBUG:
+    logger.setLevel(logging.DEBUG)
+else:
+    logger.setLevel(logging.INFO)
 
 # Load environment variables from .env
 load_dotenv()

@@ -3,7 +3,7 @@ from time import perf_counter
 
 import nltk
 
-from src.logging import set_local_logger
+from .logging import set_local_logger
 
 logger = set_local_logger(__name__)
 
