@@ -257,27 +257,28 @@ def get_post_score(post, separation_to_cfdist):
         length_penalty = 10 ** (6 - post_len)
 
     if post_len > 4:
-        range_max = sorted(list(separation_to_cfdist.keys()))[-1]
+        range_max = int(sorted(list(separation_to_cfdist.keys()))[-1])
         depth_divisor = range_max if range_max < post_len - 1 else post_len - 1
         depth_coefficient = 1 / depth_divisor
         for N in separation_to_cfdist.keys():
+            N_val = int(N)
             cfd = separation_to_cfdist[N]
             sub_score = 0
-            if N < post_len:
-                for i in range(post_len - N):
-                    sub_score += cfd[post_words[i]].freq(post_words[i + N]) / (
-                        post_len - N
+            if N_val < post_len:
+                for i in range(post_len - N_val):
+                    sub_score += cfd[post_words[i]].freq(post_words[i + N_val]) / (
+                        post_len - N_val
                     )
 
                     if DEBUG:
-                        sub_sub_score = cfd[post_words[i]].freq(post_words[i + N]) / (
+                        sub_sub_score = cfd[post_words[i]].freq(post_words[i + N_val]) / (
                             post_len - N
                         )
-                        logger.debug(post_words[i], post_words[i + N], sub_sub_score)
+                        logger.debug(post_words[i], post_words[i + N_val], sub_sub_score)
 
                 score += 10 * sub_score * depth_coefficient
 
-                logger.debug(N, sub_score)
+                logger.debug(N_val, sub_score)
 
     score += length_penalty
 
