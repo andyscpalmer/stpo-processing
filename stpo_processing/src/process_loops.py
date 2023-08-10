@@ -207,7 +207,7 @@ def process_posts():
                                         max_workers=1
                                     )
                                     process = executor.submit(
-                                        orchestrate_stpo, posts, True
+                                        orchestrate_stpo, posts
                                     )
                                     stpo_map = process.result()
 
