@@ -241,6 +241,7 @@ class STPOCursor(psycopg2.extensions.cursor):
         select_attrs = {
             "table_name": "<table_name>",
             "columns": ["<col_name>", ...],
+            "count" <optional>: "<col_name>",
             "where" <optional>: [
                 {
                     "column": "<col_name>",
@@ -256,6 +257,11 @@ class STPOCursor(psycopg2.extensions.cursor):
                 columns=sql.SQL(", ").join(
                     [sql.Identifier(col) for col in select_attrs["columns"]]
                 ),
+                table_name=sql.Identifier(select_attrs["table_name"]),
+            )
+        elif "count" in select_attrs.keys():
+            query = sql.SQL("SELECT count({column}) FROM {table_name}").format(
+                column=sql.Identifier(select_attrs["count"]),
                 table_name=sql.Identifier(select_attrs["table_name"]),
             )
         else:
