@@ -259,7 +259,7 @@ def process_posts():
                                         "where": [
                                             {
                                                 "column": "created_at",
-                                                "operator": ">",
+                                                "operator": "<",
                                                 "value": current_time
                                                 - (analysis_interval * 2),
                                             }
