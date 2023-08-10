@@ -99,9 +99,9 @@ def count_posts():
 
                 # Content for future decorator
                 interval = 0.2
-                previous_post_count = get_posts_count()
                 previous_time = datetime.now(timezone.utc)
                 two_seconds = timedelta(seconds=2)
+
                 while True:
                     current_time = datetime.now(timezone.utc)
                     loop_interval = current_time - previous_time
@@ -110,17 +110,26 @@ def count_posts():
 
                     if is_over_two_sec and is_new_minute:
                         try:
-                            count = get_posts_count()
-                            if count > 0:
-                                intermediate_posts = count - previous_post_count
-                                previous_post_count = count
-                                logger.info(
-                                    f"Posts in last minute: {intermediate_posts}"
-                                )
-                                logger.debug(f"Total post count: {count}")
+                            con, cur = get_connection_and_cursor()
+                            last_minute_of_posts = {
+                                "table_name": RAW_POSTS_TABLE_MODEL["name"],
+                                "columns": ["count(*)"],
+                                "where": [
+                                    {
+                                        "column": "created_at",
+                                        "operator": ">",
+                                        "value": current_time - timedelta(minutes=1),
+                                    }
+                                ],
+                            }
+                            results = cur.select_from_table(cur, last_minute_of_posts)
+                            if results:
+                                num_posts = results[0][0]
+                                logger.info(f"Posts in last minute: {num_posts}")
+                                logger.debug(f"Total post count: {get_posts_count()}")
                                 previous_time = current_time
                             else:
-                                logger.info(f"Posts count returned {count}.")
+                                logger.info(f"No posts from the last minute retrieved.")
                         except PGError as e:
                             logger.error("Postgres Error:", e)
                             raise
