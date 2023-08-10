@@ -113,7 +113,7 @@ def count_posts():
                             con, cur = get_connection_and_cursor()
                             last_minute_of_posts = {
                                 "table_name": RAW_POSTS_TABLE_MODEL["name"],
-                                "columns": ["count(*)"],
+                                "columns": ["raw_post_text"],
                                 "where": [
                                     {
                                         "column": "created_at",
@@ -124,7 +124,7 @@ def count_posts():
                             }
                             results = cur.select_from_table(cur, last_minute_of_posts)
                             if results:
-                                num_posts = results[0][0]
+                                num_posts = len(results)
                                 logger.info(f"Posts in last minute: {num_posts}")
                                 logger.debug(f"Total post count: {get_posts_count()}")
                                 previous_time = current_time
