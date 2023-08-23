@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "stpo-processing"
-version = "0.1.0"
+version = "0.1.1"
 description = "A Python tool for identifying and indexing repetitive posts."
 authors = ["Andrew Palmer"]
 readme = "README.md"

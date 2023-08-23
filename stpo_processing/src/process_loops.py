@@ -16,7 +16,7 @@ from src.database import get_connection_and_cursor
 from src.firehose import FirehoseClient
 from src.logging import set_local_logger
 from src.raw_post_processing import orchestrate_stpo
-from src.utils import get_posts_count
+from src.utils import get_posts_count, clean_up_database
 
 logger = set_local_logger(__name__)
 
@@ -253,22 +253,8 @@ def process_posts():
                                     cur.insert_into_table(cur, table_row)
                                     logger.info("JSON successfully saved.")
 
-                                    # Delete old posts
-                                    delete_attrs = {
-                                        "table_name": RAW_POSTS_TABLE_MODEL["name"],
-                                        "where": [
-                                            {
-                                                "column": "created_at",
-                                                "operator": "<",
-                                                "value": current_time
-                                                - (analysis_interval * 2),
-                                            }
-                                        ],
-                                    }
-                                    cur.delete_from_table(cur, delete_attrs)
-                                    logger.info(
-                                        f"Deleted posts older than {analysis_interval * 2}."
-                                    )
+                                    # Delete old posts and logs
+                                    clean_up_database()
                         except PGError as e:
                             logger.error("Postgres Error:", e)
                             raise
@@ -300,3 +286,4 @@ def process_posts():
     except Exception as e:
         logger.critical(f"FIREHOSE EXCEPTION: {e}\n\nKilling.")
         raise
+
