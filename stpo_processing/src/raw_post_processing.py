@@ -196,7 +196,7 @@ def combine_stpo_maps(stpo_maps: list) -> dict:
             if sep not in super_stpo_map.keys():
                 super_stpo_map[sep] = first_words
             else:
-                for first_word, second_words in first_words:
+                for first_word, second_words in first_words.items():
                     if first_word not in super_stpo_map[sep].keys():
                         super_stpo_map[sep][first_word] = second_words
                     else:
@@ -270,15 +270,15 @@ def get_post_score(post, separation_to_cfdist):
                         post_len - N_val
                     )
 
-                    if DEBUG:
-                        sub_sub_score = cfd[post_words[i]].freq(post_words[i + N_val]) / (
-                            post_len - N
-                        )
-                        logger.debug(post_words[i], post_words[i + N_val], sub_sub_score)
+                    # if DEBUG:
+                    #     sub_sub_score = cfd[post_words[i]].freq(post_words[i + N_val]) / (
+                    #         post_len - N_val
+                    #     )
+                    #     logger.debug(post_words[i], post_words[i + N_val], sub_sub_score)
 
                 score += 10 * sub_score * depth_coefficient
 
-                logger.debug(N_val, sub_score)
+                # logger.debug(N_val, sub_score)
 
     score += length_penalty
 

@@ -7,7 +7,7 @@ readme = "README.md"
 packages = [{include = "stpo_processing"}]
 
 [tool.poetry.dependencies]
-python = ">=3.11,<3.12"
+python = ">=3.10,<3.12"
 psycopg2-binary = "^2.9.6"
 nltk = "^3.8.1"
 atproto = "^0.0.23"

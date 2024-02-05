@@ -215,13 +215,26 @@ class STPOCursor(psycopg2.extensions.cursor):
             dictionaries.append(output_record)
         return dictionaries
 
-    def process_where_conditions(self, query, execution_values, where_attrs):
+    def process_where_conditions(self, query, execution_values: list, where_attrs: dict):
         query += sql.SQL(" WHERE ")
         where_conditions = []
         for where_element in where_attrs:
             if "text" in where_element.keys():
                 # Don't use this if you can avoid it
                 where_conditions.append(sql.SQL(where_element["text"]))
+            elif "between" in where_element.keys():
+                if "cast" in where_element.keys():
+                    where_text = " CAST({where_column} AS " + where_element['cast'] + ") "
+                else:
+                    where_text = "{where_column} "
+                where_text += "BETWEEN"
+                where_condition = sql.SQL(where_text).format(
+                    where_column=sql.Identifier(where_element["column"])
+                )
+                where_condition += sql.SQL(" %s AND %s")
+                where_conditions.append(where_condition)
+                execution_values.extend(where_element["between"])
+
             else:
                 where_text = "{where_column} "
                 where_text += where_element["operator"]
@@ -249,6 +262,10 @@ class STPOCursor(psycopg2.extensions.cursor):
                     "value": <comparison_value>
                 }, {...}, ...
             ],
+            "order_by" <optional>: {
+                "column": "<col_name>",
+                "asc_desc": <"asc" or "desc">
+            }
             "limit" <optional>: <int>
         }
         """
@@ -260,7 +277,7 @@ class STPOCursor(psycopg2.extensions.cursor):
                 table_name=sql.Identifier(select_attrs["table_name"]),
             )
         elif "count" in select_attrs.keys():
-            query = sql.SQL("SELECT count({column}) FROM {table_name}").format(
+            query = sql.SQL("SELECT COUNT({column}) FROM {table_name}").format(
                 column=sql.Identifier(select_attrs["count"]),
                 table_name=sql.Identifier(select_attrs["table_name"]),
             )
@@ -276,23 +293,14 @@ class STPOCursor(psycopg2.extensions.cursor):
             query, execution_values = self.process_where_conditions(
                 query, execution_values, select_attrs["where"]
             )
-            # query += sql.SQL(" WHERE ")
-            # where_conditions = []
-            # for where_element in select_attrs["where"]:
-            #     if "text" in where_element.keys():
-            #         # Don't use this if you can avoid it
-            #         where_conditions.append(sql.SQL(where_element["text"]))
-            #     else:
-            #         where_text = "{where_column} "
-            #         where_text += where_element["operator"]
-            #         where_condition = sql.SQL(where_text).format(
-            #             where_column=sql.Identifier(where_element["column"])
-            #         )
-            #         where_condition += sql.SQL(" %s")
-            #         where_conditions.append(where_condition)
-            #         execution_values.append(where_element["value"])
-
-            # query += sql.SQL(" AND").join(where_conditions)
+        
+        if "order_by" in select_attrs.keys():
+            query_text = " ORDER BY {order_by}"
+            query += sql.SQL(query_text).format(
+                order_by=sql.Identifier(select_attrs["order_by"]["column"])
+            )
+            if "asc_desc" in select_attrs["order_by"].keys():
+                query += sql.SQL(f" {select_attrs['order_by']['asc_desc']}")
 
         if "limit" in select_attrs.keys():
             query += sql.SQL(f" LIMIT {select_attrs['limit']}")
